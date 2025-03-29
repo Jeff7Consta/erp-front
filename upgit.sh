@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configurar nome e email
-git config --global user.name "Jeff Consta"
+git config --global user.name "Jeff7Consta"
 git config --global user.email "jeffersonreis66@gmail.com"
 
 # Entrar na pasta do projeto
