@@ -22,4 +22,4 @@ git commit -m "Subindo projeto ERP Front 0.1"
 
 # Setar branch principal e subir
 git branch -M main
-git push -u origin main
+git push -u origin main --force
