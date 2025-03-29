@@ -1,83 +1,99 @@
+import react, { createcontext, usecontext, usestate, useeffect, reactnode } from "react"
+import { useauth } from "./authcontext"
+import { getmenusbyuser } from "@/services/api"
+import { toast } from "@/hooks/use-toast"
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useAuth } from "./AuthContext";
-import { getMenusByUser } from "@/services/api";
-
-export interface MenuItem {
-  id: number;
-  nome: string;
-  rota: string;
-  icone: string;
-  paiId: number | null;
-  ordem: number;
-  filhos?: MenuItem[];
+export interface menuitem {
+  id: number
+  nome: string
+  rota: string
+  icone: string
+  paiid: number | null
+  ordem: number
+  filhos?: menuitem[]
 }
 
-interface MenuContextType {
-  menus: MenuItem[];
-  isLoading: boolean;
-  isSidebarOpen: boolean;
-  toggleSidebar: () => void;
+interface menucontexttype {
+  menus: menuitem[]
+  isloading: boolean
+  iserror: boolean
+  issidebaropen: boolean
+  togglesidebar: () => void
 }
 
-const MenuContext = createContext<MenuContextType | undefined>(undefined);
+const menucontext = createcontext<menucontexttype | undefined>(undefined)
 
-export const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [rawMenus, setRawMenus] = useState<MenuItem[]>([]);
-  const [menus, setMenus] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const { isAuthenticated, token } = useAuth();
+export const menuprovider: react.fc<{ children: reactnode }> = ({ children }) => {
+  const [rawmenus, setrawmenus] = usestate<menuitem[]>([])
+  const [menus, setmenus] = usestate<menuitem[]>([])
+  const [isloading, setisloading] = usestate(true)
+  const [iserror, setiserror] = usestate(false)
+  const [issidebaropen, setissidebaropen] = usestate(true)
+  const { isauthenticated, token } = useauth()
 
-  useEffect(() => {
-    const fetchMenus = async () => {
-      if (isAuthenticated && token) {
-        try {
-          setIsLoading(true);
-          const menusData = await getMenusByUser();
-          setRawMenus(menusData);
-        } catch (error) {
-          console.error("Error fetching menus:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
+  useeffect(() => {
+    // const fetchmenus = async () => {
+    //   if (isauthenticated && token) {
+    //     try {
+    //       setisloading(true)
+    //       setiserror(false)
+    //       const menusdata = await getmenusbyuser()
+    //       setrawmenus(menusdata)
+    //     } catch (error) {
+    //       console.error("error fetching menus:", error)
+    //       setiserror(true)
+    //       toast({
+    //         title: "erro ao carregar menus",
+    //         description: "não foi possível carregar os menus. tente novamente.",
+    //         variant: "destructive",
+    //       })
+    //     } finally {
+    //       setisloading(false)
+    //     }
+    //   } else {
+    //     setisloading(false)
+    //   }
+    // }
+    // fetchmenus()
+  
+    // menu fixo pra teste
+    setrawmenus([
+      { id: 1, nome: "dashboard", rota: "/dashboard", icone: "home", paiid: null, ordem: 1 },
+      { id: 2, nome: "usuários", rota: "/usuarios", icone: "users", paiid: null, ordem: 2 },
+    ])
+    setisloading(false)
+  }, [isauthenticated, token])
 
-    fetchMenus();
-  }, [isAuthenticated, token]);
-
-  useEffect(() => {
-    // Organize menus into a hierarchical structure
-    const buildMenuTree = (items: MenuItem[], parentId: number | null = null): MenuItem[] => {
+  useeffect(() => {
+    const buildmenutree = (items: menuitem[], parentid: number | null = null): menuitem[] => {
       return items
-        .filter(item => item.paiId === parentId)
+        .filter(item => item.paiid === parentid)
         .sort((a, b) => a.ordem - b.ordem)
         .map(item => ({
           ...item,
-          filhos: buildMenuTree(items, item.id)
-        }));
-    };
+          filhos: buildmenutree(items, item.id),
+        }))
+    }
 
-    const organizedMenus = buildMenuTree(rawMenus);
-    setMenus(organizedMenus);
-  }, [rawMenus]);
+    const organizedmenus = buildmenutree(rawmenus)
+    setmenus(organizedmenus)
+  }, [rawmenus])
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const togglesidebar = () => {
+    setissidebaropen(!issidebaropen)
+  }
 
   return (
-    <MenuContext.Provider value={{ menus, isLoading, isSidebarOpen, toggleSidebar }}>
+    <menucontext.provider value={{ menus, isloading, iserror, issidebaropen, togglesidebar }}>
       {children}
-    </MenuContext.Provider>
-  );
-};
+    </menucontext.provider>
+  )
+}
 
-export const useMenu = () => {
-  const context = useContext(MenuContext);
+export const usemenu = () => {
+  const context = usecontext(menucontext)
   if (context === undefined) {
-    throw new Error("useMenu must be used within a MenuProvider");
+    throw new error("usemenu must be used within a menuprovider")
   }
-  return context;
-};
+  return context
+}

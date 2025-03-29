@@ -1,96 +1,98 @@
+import react, { usestate } from "react"
+import { navlink, uselocation } from "react-router-dom"
+import { chevrondown, chevronright, helpcircle } from "lucide-react"
+import { usemenu } from "@/contexts/menucontext"
+import { menuitem } from "@/contexts/menucontext"
+import * as icons from "lucide-react"
 
-import React, { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { ChevronDown, ChevronRight, HelpCircle } from "lucide-react";
-import { useMenu } from "@/contexts/MenuContext";
-import { MenuItem } from "@/contexts/MenuContext";
-import * as Icons from "lucide-react";
+type iconname = keyof typeof icons
 
-type IconName = keyof typeof Icons;
+const sidebar: react.fc = () => {
+  const { menus, isloading, iserror, issidebaropen } = usemenu()
+  const location = uselocation()
+  const [expandedmenus, setexpandedmenus] = usestate<record<number, boolean>>({})
 
-const Sidebar: React.FC = () => {
-  const { menus, isSidebarOpen } = useMenu();
-  const location = useLocation();
-  const [expandedMenus, setExpandedMenus] = useState<Record<number, boolean>>({});
+  const geticonbyname = (iconname: string) => {
+    const iconcomponent = (icons[iconname as iconname] || icons.helpcircle) as react.componenttype<{ classname: string }>
+    return <iconcomponent classname="h-5 w-5" />
+  }
 
-  // Dynamically get icon component by name
-  const getIconByName = (iconName: string) => {
-    // Default to a question mark if icon doesn't exist
-    const IconComponent = (Icons[iconName as IconName] || Icons.HelpCircle) as React.ComponentType<{ className: string }>;
-    return <IconComponent className="h-5 w-5" />;
-  };
-
-  const toggleSubmenu = (menuId: number) => {
-    setExpandedMenus(prev => ({
+  const togglesubmenu = (menuid: number) => {
+    setexpandedmenus(prev => ({
       ...prev,
-      [menuId]: !prev[menuId]
-    }));
-  };
+      [menuid]: !prev[menuid],
+    }))
+  }
 
-  // Recursively render menu items and their children
-  const renderMenuItem = (menu: MenuItem) => {
-    const hasChildren = menu.filhos && menu.filhos.length > 0;
-    const isExpanded = expandedMenus[menu.id];
-    const isActive = location.pathname === menu.rota;
-    const isChildActive = hasChildren && menu.filhos?.some(child => 
-      location.pathname === child.rota || 
+  const rendermenuitem = (menu: menuitem) => {
+    const haschildren = menu.filhos && menu.filhos.length > 0
+    const isexpanded = expandedmenus[menu.id]
+    const isactive = location.pathname === menu.rota
+    const ischildactive = haschildren && menu.filhos?.some(child =>
+      location.pathname === child.rota ||
       (child.filhos && child.filhos.some(grandchild => location.pathname === grandchild.rota))
-    );
+    )
 
     return (
-      <div key={menu.id} className="mb-1">
+      <div key={menu.id} classname="mb-1">
         {menu.rota ? (
-          <NavLink
+          <navlink
             to={menu.rota}
-            className={({ isActive }) => 
-              `sidebar-item ${isActive ? "active" : ""} ${!isSidebarOpen ? "justify-center" : ""}`
+            classname={({ isactive }) =>
+              `sidebar-item ${isactive ? "active" : ""} ${!issidebaropen ? "justify-center" : ""}`
             }
           >
-            {getIconByName(menu.icone)}
-            {isSidebarOpen && <span className="ml-3">{menu.nome}</span>}
-          </NavLink>
+            {geticonbyname(menu.icone)}
+            {issidebaropen && <span classname="ml-3">{menu.nome}</span>}
+          </navlink>
         ) : (
-          // Parent menu with children
           <div
-            className={`sidebar-item cursor-pointer ${isChildActive ? "text-sidebar-primary-foreground" : ""} ${!isSidebarOpen ? "justify-center" : ""}`}
-            onClick={() => isSidebarOpen && toggleSubmenu(menu.id)}
+            classname={`sidebar-item cursor-pointer ${ischildactive ? "text-sidebar-primary-foreground" : ""} ${!issidebaropen ? "justify-center" : ""}`}
+            onclick={() => issidebaropen && togglesubmenu(menu.id)}
           >
-            {getIconByName(menu.icone)}
-            {isSidebarOpen && (
+            {geticonbyname(menu.icone)}
+            {issidebaropen && (
               <>
-                <span className="ml-3 flex-1">{menu.nome}</span>
-                {hasChildren && (
-                  isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+                <span classname="ml-3 flex-1">{menu.nome}</span>
+                {haschildren && (
+                  isexpanded ? <chevrondown classname="h-4 w-4" /> : <chevronright classname="h-4 w-4" />
                 )}
               </>
             )}
           </div>
         )}
 
-        {/* Render children if expanded */}
-        {hasChildren && isSidebarOpen && isExpanded && (
-          <div className="ml-6 mt-1 space-y-1">
-            {menu.filhos?.map(child => renderMenuItem(child))}
+        {haschildren && issidebaropen && isexpanded && (
+          <div classname="ml-6 mt-1 space-y-1">
+            {menu.filhos?.map(child => rendermenuitem(child))}
           </div>
         )}
       </div>
-    );
-  };
+    )
+  }
 
   return (
-    <div className={`sidebar z-20 ${isSidebarOpen ? "" : "sidebar-collapsed"}`}>
-      <div className="p-4 flex items-center justify-center border-b border-sidebar-border h-16">
-        {isSidebarOpen ? (
-          <h1 className="text-xl font-bold text-white">ERP Admin</h1>
+    <div classname={`sidebar z-20 ${issidebaropen ? "" : "sidebar-collapsed"}`}>
+      <div classname="p-4 flex items-center justify-center border-b border-sidebar-border h-16">
+        {issidebaropen ? (
+          <h1 classname="text-xl font-bold text-white">erp admin</h1>
         ) : (
-          <h1 className="text-xl font-bold text-white">EA</h1>
+          <h1 classname="text-xl font-bold text-white">ea</h1>
         )}
       </div>
-      <nav className="p-3 mt-2">
-        {menus.map(menu => renderMenuItem(menu))}
-      </nav>
+      {isloading ? (
+        <div classname="p-3 mt-2 text-white">carregando menus...</div>
+      ) : iserror ? (
+        <div classname="p-3 mt-2 text-red-400">erro ao carregar menus</div>
+      ) : menus.length === 0 ? (
+        <div classname="p-3 mt-2 text-white">nenhum menu disponível</div>
+      ) : (
+        <nav classname="p-3 mt-2">
+          {menus.map(menu => rendermenuitem(menu))}
+        </nav>
+      )}
     </div>
-  );
-};
+  )
+}
 
-export default Sidebar;
+export default sidebar
